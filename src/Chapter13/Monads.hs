@@ -2,6 +2,7 @@ module Chapter13.Monads where
 
 
 import Control.Monad.State
+import System.Random
 
 
 type Stack = [Int]
@@ -40,3 +41,16 @@ stackyStack = do
         if stackNow == [1,2,3]
             then put [8,3,1]
             else put [9,2,1]
+
+--
+-- Random
+--
+randomSt :: (RandomGen g, Random a) => State g a
+randomSt = state random
+
+threeCoins :: State StdGen (Bool,Bool,Bool)
+threeCoins = do
+        a <- randomSt
+        b <- randomSt
+        c <- randomSt
+        return (a,b,c)
