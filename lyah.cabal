@@ -20,7 +20,7 @@ library
   -- other-extensions:    
   exposed-modules:     Chapter13.Monads
   ghc-options:         -Wall -rtsopts
-  build-depends:       base >=4.6 && <4.7,
+  build-depends:       base >=4.6 && <4.8,
                        lens,
                        containers,
                        mtl,
@@ -31,7 +31,7 @@ library
 executable lyah
   main-is:             Main.hs
   ghc-options:         -Wall -rtsopts
-  build-depends:       base >=4.6 && <4.7,
+  build-depends:       base >=4.6 && <4.8,
                        lens,
                        containers,
                        mtl,
