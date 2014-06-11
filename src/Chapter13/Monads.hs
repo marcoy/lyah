@@ -42,6 +42,12 @@ stackyStack = do
             then put [8,3,1]
             else put [9,2,1]
 
+mytest :: State Int Int
+mytest = do
+        put 3
+        modify (+ 1)
+        get
+
 --
 -- Random
 --
