@@ -1,10 +1,27 @@
 module Chapter13.Monads where
 
 
+import Control.Applicative
+import Control.Monad
 import Control.Monad.State
+import Control.Monad.Writer
 import System.Random
 
 
+--
+-- Writer
+--
+isBigGang :: Int -> (Bool, String)
+isBigGang x = (x > 9, "Compared gang size to 9")
+
+
+applyLog :: (a, String) -> (a -> (b,String)) -> (b,String)
+applyLog (x,log) f = let (y,newLog) = f x in (y,log ++ newLog)
+
+
+--
+-- State
+--
 type Stack = [Int]
 
 pop :: State Stack Int
@@ -60,3 +77,27 @@ threeCoins = do
         b <- randomSt
         c <- randomSt
         return (a,b,c)
+
+
+--
+-- Applicative using Monad
+--
+ap :: (Monad m) => m (a -> b) -> m a -> m b
+ap mf m = do
+        f <- mf
+        x <- m
+        return (f x)
+
+
+keepSmall :: Int -> Writer [String] Bool
+keepSmall x
+    | x < 4 = do
+        tell ["Keeping " ++ show x]
+        return True
+    | otherwise = do
+        tell [show x ++ " is too large, throwing it away"]
+        return False
+
+
+powerset :: [a] -> [[a]]
+powerset = filterM (\_ -> [True,False])
