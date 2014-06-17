@@ -14,9 +14,48 @@ import System.Random
 isBigGang :: Int -> (Bool, String)
 isBigGang x = (x > 9, "Compared gang size to 9")
 
-
 applyLog :: (a, String) -> (a -> (b,String)) -> (b,String)
 applyLog (x,log) f = let (y,newLog) = f x in (y,log ++ newLog)
+
+
+-- newtype Writer w a = Writer { runWriter :: (a, w) }
+
+-- instance (Monoid w) => Monad (Writer w) where
+--        return x = Writer (x, mempty)
+--        (Writer (x,v)) >>= k = let (Writer (y, v')) = k x
+--                                in Writer (y, v `mappend` v')
+
+logNumber :: Int -> Writer [String] Int
+logNumber x = writer (x, ["Got number: " ++ show x])
+
+multWithLog :: Writer [String] Int
+multWithLog = do
+        a <- logNumber 3
+        b <- logNumber 5
+        tell ["Gonna multiply these two"]
+        return (a * b)
+
+gcd' :: Int -> Int -> Writer [String] Int
+gcd' a b
+    | b == 0    = do
+        tell ["Finished with " ++ show a]
+        return a
+    | otherwise = do
+        tell [show a ++ " mod " ++ show b ++ " = " ++ show (a `mod` b)]
+        gcd' b (a `mod` b)
+
+-- Difference list
+newtype DiffList a = DiffList { getDiffList :: [a] -> [a] }
+
+toDiffList :: [a] -> DiffList a
+toDiffList xs = DiffList (xs++)
+
+fromDiffList :: DiffList a -> [a]
+fromDiffList (DiffList f) = f []
+
+instance Monoid (DiffList a) where
+        mempty = DiffList (\xs -> [] ++ xs)
+        (DiffList f) `mappend` (DiffList g) = DiffList $ \xs -> f (g xs)
 
 
 --
