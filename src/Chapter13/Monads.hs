@@ -1,7 +1,6 @@
 module Chapter13.Monads where
 
 
-import Control.Applicative
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Writer
@@ -11,12 +10,6 @@ import System.Random
 --
 -- Writer
 --
-isBigGang :: Int -> (Bool, String)
-isBigGang x = (x > 9, "Compared gang size to 9")
-
-applyLog :: (a, String) -> (a -> (b,String)) -> (b,String)
-applyLog (x,log) f = let (y,newLog) = f x in (y,log ++ newLog)
-
 
 -- newtype Writer w a = Writer { runWriter :: (a, w) }
 
