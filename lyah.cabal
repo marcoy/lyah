@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 library
   -- other-modules:       
   -- other-extensions:    
-  exposed-modules:     Chapter13.Monads
+  exposed-modules:     Chapter13.Monads,
+                       Chapter13.RPN
   ghc-options:         -Wall -rtsopts
   build-depends:       base >=4.6 && <4.8,
                        lens,
