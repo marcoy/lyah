@@ -62,5 +62,43 @@ isValid s = length s >= 8 && any isAlpha s && any isNumber s && any isPunctuatio
 
 mtMain :: IO ()
 mtMain = do
-        maybePassphrase <- runMaybeT askPassphrase
+        _ <- runMaybeT askPassphrase
         putStrLn "Done"
+
+
+-- My Reader Transformer. This is just an excercise.
+newtype MyReaderT e m a = MyReaderT { runMyReaderT :: (e -> m a) }
+
+instance (Monad m) => Monad (MyReaderT e m) where
+        return x = MyReaderT $ \_ -> return x
+        rd >>= k = MyReaderT $ \env -> do
+                a <- runMyReaderT rd env
+                runMyReaderT (k a) env
+
+instance MonadTrans (MyReaderT e) where
+        lift :: Monad m => m a -> MyReaderT e m a
+        lift m = MyReaderT $ \_ -> m
+        -- or lift m = MyReaderT (const m)
+
+askMyReader :: (Monad m) => MyReaderT e m e
+askMyReader = MyReaderT $ \e -> return e
+
+myEnvComputation :: MyReaderT [String] IO (Bool, String)
+myEnvComputation = do
+        lift $ putStrLn "Type something and see if it matches anything in the Environment"
+        userInput <- lift getLine
+        -- lift $ putStrLn $ "You entered " ++ userInput
+        -- The >>=, defined above, takes care of unwrapping the inner
+        -- monad. Hence, I can use env <- askMyReader to extract out the
+        -- environment.
+        env <- askMyReader
+        -- lift $ putStrLn $ "The env " ++ (show env)
+        return $ (userInput `elem` env, userInput)
+
+testMyEnvComp :: IO ()
+testMyEnvComp = do
+        putStrLn "Running EnvComputation"
+        (result, input) <- runMyReaderT myEnvComputation ["asdf", "zxcv"]
+        if result
+            then putStrLn "You have entered something in the environment"
+            else putStrLn $ "Nope. '" ++ input ++ "' is not in there."
