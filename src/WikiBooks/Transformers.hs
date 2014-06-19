@@ -66,6 +66,25 @@ mtMain = do
         putStrLn "Done"
 
 
+-- My Reader Monad
+runMyReader :: MyReader e a -> e -> a
+runMyReader (MyReader f) env = f env
+
+myreader :: (e -> a) -> MyReader e a
+myreader f = MyReader f
+
+askMyReaderM :: MyReader e e
+askMyReaderM = myreader $ \e -> e
+
+newtype MyReader e a = MyReader (e -> a)
+
+instance Monad (MyReader e) where
+        return x = myreader $ \_ -> x
+        rd >>= k = myreader $ \env ->
+                let x = runMyReader rd env
+                 in runMyReader (k x) env
+
+
 -- My Reader Transformer. This is just an excercise.
 newtype MyReaderT e m a = MyReaderT { runMyReaderT :: (e -> m a) }
 
