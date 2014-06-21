@@ -2,7 +2,7 @@ module Main where
 
 import Chapter13.Monads()
 import WikiBooks.Transformers
+import Transformers.StepByStep
 
 main :: IO ()
-main = do
-  putStrLn "LYAH"
+main = putStrLn "Haskell playground"
