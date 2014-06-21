@@ -4,6 +4,10 @@ module WikiBooks.Transformers where
 import Control.Monad
 import Control.Monad.Trans
 import Data.Char
+import Debug.Trace
+
+mytrace :: (Show a) => a -> a
+mytrace a = traceShow a a
 
 --getPassphrase :: IO (Maybe String)
 --getPassphrase = do
@@ -121,3 +125,41 @@ testMyEnvComp = do
         if result
             then putStrLn "You have entered something in the environment"
             else putStrLn $ "Nope. '" ++ input ++ "' is not in there."
+
+
+-- My List transformer
+newtype MyListT m a = MyListT { runMyListT :: m [a] }
+
+instance (Monad m) => Monad (MyListT m) where
+        return x = MyListT $ return [x]
+        lt >>= k = MyListT $ do
+                -- Unwrapper the list from the inner monad.
+                xs <- runMyListT lt
+                -- Apply k to xs
+                xss <- mapM (runMyListT . k) xs
+                return $ concat xss
+
+instance MonadTrans MyListT where
+        lift m = MyListT $ do
+            -- Extract the value from the inner monad first
+            x <- m
+            -- Wrap that extracted value in a list and return it.
+            return [x]
+
+
+newtype MyIdentity a = MyIdentity { runIdentity :: a }
+
+instance Monad MyIdentity where
+        return = MyIdentity
+        myid >>= k = k $ runIdentity myid
+
+newtype MyIdentityT m a = MyIdentityT { runIdentityT :: m a }
+
+instance (Monad m) => Monad (MyIdentityT m) where
+        return  = MyIdentityT . return
+        m >>= k = MyIdentityT $ do
+                    v <- runIdentityT m
+                    runIdentityT (k v)
+
+instance MonadTrans MyIdentityT where
+        lift = MyIdentityT
