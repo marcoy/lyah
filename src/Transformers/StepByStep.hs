@@ -42,7 +42,9 @@ exampleExp :: Exp
 exampleExp = Lit 12 `Plus` (App (Abs "x" (Var "x")) (Lit 4 `Plus` Lit 2))
 
 
+--
 -- 2.1 Converting to Monadic Style
+--
 type Eval1 a = Identity a
 
 runEval1 :: Eval1 a -> a
@@ -63,7 +65,9 @@ eval1 env (App e1 e2)  = do val1 <- eval1 env e1
 
 -- λ> runEval1 (eval1 Map.empty exampleExp)
 
+--
 -- 2.2 Adding error Handling
+--
 type Eval2 a = ErrorT String Identity a
 
 runEval2 :: Eval2 a -> Either String a
@@ -84,22 +88,53 @@ eval2a env (App e1 e2)  = do val1 <- eval2a env e1
 
 -- λ> runEval1 (eval1 Map.empty exampleExp)
 
-eval2b :: Env -> Exp -> Eval2 Value
-eval2b env (Lit i)      = return $ IntVal i
-eval2b env (Var n)      = case Map.lookup n env of
+eval2 :: Env -> Exp -> Eval2 Value
+eval2 env (Lit i)      = return $ IntVal i
+eval2 env (Var n)      = case Map.lookup n env of
                               Nothing  -> throwError ("unbound variable: " ++ n)
                               Just val -> return val
-eval2b env (Plus e1 e2) = do e1' <- eval2b env e1
-                             e2' <- eval2b env e2
-                             case (e1',e2') of
-                                 (IntVal i1, IntVal i2) -> return $ IntVal (i1 + i2)
-                                 _ -> throwError "type error in addition"
-eval2b env (Abs n e)    = return $ FunVal env n e
-eval2b env (App e1 e2)  = do val1 <- eval2b env e1
-                             val2 <- eval2b env e2
-                             case val1 of
-                                 FunVal env' n body ->
-                                    eval2b (Map.insert n val2 env') body
-                                 _ -> throwError "type error in application"
+eval2 env (Plus e1 e2) = do e1' <- eval2 env e1
+                            e2' <- eval2 env e2
+                            case (e1',e2') of
+                                (IntVal i1, IntVal i2) -> return $ IntVal (i1 + i2)
+                                _ -> throwError "type error in addition"
+eval2 env (Abs n e)    = return $ FunVal env n e
+eval2 env (App e1 e2)  = do val1 <- eval2 env e1
+                            val2 <- eval2 env e2
+                            case val1 of
+                                FunVal env' n body ->
+                                   eval2 (Map.insert n val2 env') body
+                                _ -> throwError "type error in application"
 
--- λ> runEval2 (eval2a Map:empty (Plus (Lit 1) (Abs "x" (Var "x"))))
+-- λ> runEval2 (eval2 Map.empty (Plus (Lit 1) (Abs "x" (Var "x"))))
+
+--
+-- Hiding the environment
+--
+-- definition: ReaderT  r             m             a
+type Eval3 a = ReaderT Env (ErrorT String Identity) a
+
+runEval3 :: Env -> Eval3 a -> Either String a
+runEval3 env ev = runIdentity (runErrorT (runReaderT ev env))
+
+eval3 :: Exp -> Eval3 Value
+eval3 (Lit i) = return $ IntVal i
+eval3 (Var n) = do env <- ask
+                   case Map.lookup n env of
+                       Nothing  -> throwError ("unbound variable: " ++ n)
+                       Just val -> return val
+eval3 (Plus e1 e2) = do e1' <- eval3 e1
+                        e2' <- eval3 e2
+                        case (e1',e2') of
+                            (IntVal i1, IntVal i2) -> return $ IntVal (i1 + i2)
+                            _                      -> throwError "type error in addition"
+eval3 (Abs n e) = do env <- ask
+                     return $ FunVal env n e
+eval3 (App e1 e2) = do val1 <- eval3 e1
+                       val2 <- eval3 e2
+                       case val1 of
+                           FunVal env' n body ->
+                               local (const (Map.insert n val2 env')) (eval3 body)
+                           _ -> throwError "type error in application"
+
+-- λ> runEval3 Map.empty (eval3 exampleExp)
