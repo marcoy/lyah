@@ -4,6 +4,7 @@ module WikiBooks.Transformers where
 import Control.Monad
 import Control.Monad.Trans
 import Data.Char
+import Data.Monoid
 import Debug.Trace
 
 mytrace :: (Show a) => a -> a
@@ -163,3 +164,27 @@ instance (Monad m) => Monad (MyIdentityT m) where
 
 instance MonadTrans MyIdentityT where
         lift = MyIdentityT
+
+
+-- My Writer Monad
+newtype MyWriter w a = MyWriter { runMyWriter :: (a, w) }
+
+instance (Monoid w) => Monad (MyWriter w) where
+        return a = MyWriter (a, mempty)
+        (MyWriter (a, w)) >>= k = let (a', w') = runMyWriter $ k a
+                                  in MyWriter (a', w `mappend` w')
+
+newtype MyWriterT w m a = MyWriterT { runMyWriterT :: m (a, w) }
+
+instance (Monoid w, Monad m) => Monad (MyWriterT w m) where
+        return a = MyWriterT $ return (a, mempty)
+        wt >>= k = MyWriterT $ do
+            (a, w)  <- runMyWriterT wt
+            (b, w') <- runMyWriterT (k a)
+            return (b, w `mappend` w')
+        fail msg = MyWriterT $ fail msg
+
+instance (Monoid w) => MonadTrans (MyWriterT w) where
+        lift m = MyWriterT $ do
+            a <- m
+            return (a, mempty)
