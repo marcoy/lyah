@@ -188,3 +188,19 @@ instance (Monoid w) => MonadTrans (MyWriterT w) where
         lift m = MyWriterT $ do
             a <- m
             return (a, mempty)
+
+
+-- EitherT
+newtype EitherT a m b = EitherT { runEitherT :: m (Either a b) }
+
+instance (Monad m) => Monad (EitherT a m) where
+        return  = EitherT . return . Right
+        e >>= k = EitherT $ do
+                    v <- runEitherT e
+                    case v of
+                        (Left v')  -> return $ Left v'
+                        (Right v') -> runEitherT $ k v'
+
+instance MonadTrans (EitherT a) where
+        -- Given an inner monad, m, lift it into EitherT
+        lift = EitherT . (liftM Right)
