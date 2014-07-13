@@ -21,8 +21,9 @@ library
   exposed-modules:     Main,
                        Chapter13.Monads,
                        Chapter13.RPN,
-                       WikiBooks.Transformers
-  ghc-options:         -Wall -rtsopts
+                       WikiBooks.Transformers,
+                       WikiBooks.ArrowTutorial
+  ghc-options:         -rtsopts
   build-depends:       base >=4.6 && <4.8,
                        lens,
                        containers,
@@ -33,7 +34,7 @@ library
 
 executable lyah
   main-is:             Main.hs
-  ghc-options:         -Wall -rtsopts
+  ghc-options:         -rtsopts
   build-depends:       base >=4.6 && <4.8,
                        lens,
                        containers,
